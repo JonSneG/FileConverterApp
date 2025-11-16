@@ -1,6 +1,7 @@
 package com.fileconverter.ui;
 
 import com.fileconverter.converter.*;
+import com.fileconverter.utils.ThemeManager;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -42,7 +43,18 @@ public class ConverterUI extends JFrame {
         setSize(700, 500);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
-        setLayout(new BorderLayout(10, 10));
+              setLayout(new BorderLayout(10, 10));
+
+        // Menu bar
+        JMenuBar menuBar = new JMenuBar();
+        JMenu viewMenu = new JMenu("View");
+        JMenuItem toggleThemeItem = new JMenuItem("Toggle Dark Mode");
+        toggleThemeItem.addActionListener(e -> {
+            ThemeManager.toggleTheme(this);
+        });
+        viewMenu.add(toggleThemeItem);
+        menuBar.add(viewMenu);
+        setJMenuBar(menuBar);
 
         // Create main panel
         JPanel mainPanel = new JPanel();
@@ -126,6 +138,15 @@ public class ConverterUI extends JFrame {
         mainPanel.add(convertButton);
         mainPanel.add(Box.createRigidArea(new Dimension(0, 20)));
 
+        // Progress bar
+        JProgressBar progressBar = new JProgressBar();
+        progressBar.setStringPainted(true);
+        progressBar.setString("Ready");
+        progressBar.setMaximumSize(new Dimension(600, 25));
+        progressBar.setAlignmentX(Component.CENTER_ALIGNMENT);
+        mainPanel.add(progressBar);
+        mainPanel.add(Box.createRigidArea(new Dimension(0, 20)));
+
         // Log area
         JPanel logPanel = new JPanel(new BorderLayout());
         logPanel.add(new JLabel("Log:"), BorderLayout.NORTH);
@@ -201,6 +222,23 @@ public class ConverterUI extends JFrame {
         String selectedType = (String) conversionTypeCombo.getSelectedItem();
 
         convertButton.setEnabled(false);
+
+        // Find progress bar
+        JProgressBar progressBar = null;
+        for (Component comp : ((JPanel)getContentPane().getComponent(0)).getComponents()) {
+            if (comp instanceof JProgressBar) {
+                progressBar = (JProgressBar) comp;
+                break;
+            }
+        }
+
+        final JProgressBar finalProgressBar = progressBar;
+
+        if (finalProgressBar != null) {
+            finalProgressBar.setIndeterminate(true);
+            finalProgressBar.setString("Converting...");
+        }
+
         log("Starting conversion: " + selectedType);
 
         // Run conversion in background thread
@@ -213,7 +251,13 @@ public class ConverterUI extends JFrame {
                     converter.convertToPdf(inputFile, outputFile);
                     log("✓ Conversion successful!");
                     log("Output saved to: " + outputFile.getAbsolutePath());
+
                     SwingUtilities.invokeLater(() -> {
+                        if (finalProgressBar != null) {
+                            finalProgressBar.setIndeterminate(false);
+                            finalProgressBar.setValue(100);
+                            finalProgressBar.setString("Complete!");
+                        }
                         JOptionPane.showMessageDialog(this,
                                 "File converted successfully!",
                                 "Success",
@@ -224,7 +268,13 @@ public class ConverterUI extends JFrame {
                     txtConverter.convertFromPdf(inputFile, outputFile);
                     log("✓ Conversion successful!");
                     log("Output saved to: " + outputFile.getAbsolutePath());
+
                     SwingUtilities.invokeLater(() -> {
+                        if (finalProgressBar != null) {
+                            finalProgressBar.setIndeterminate(false);
+                            finalProgressBar.setValue(100);
+                            finalProgressBar.setString("Complete!");
+                        }
                         JOptionPane.showMessageDialog(this,
                                 "File converted successfully!",
                                 "Success",
@@ -238,13 +288,33 @@ public class ConverterUI extends JFrame {
                 log("✗ Error: " + ex.getMessage());
                 ex.printStackTrace();
                 SwingUtilities.invokeLater(() -> {
+                    if (finalProgressBar != null) {
+                        finalProgressBar.setIndeterminate(false);
+                        finalProgressBar.setValue(0);
+                        finalProgressBar.setString("Failed");
+                    }
                     JOptionPane.showMessageDialog(this,
                             "Conversion failed: " + ex.getMessage(),
                             "Error",
                             JOptionPane.ERROR_MESSAGE);
                 });
             } finally {
-                SwingUtilities.invokeLater(() -> convertButton.setEnabled(true));
+                SwingUtilities.invokeLater(() -> {
+                    convertButton.setEnabled(true);
+                    if (finalProgressBar != null && !finalProgressBar.getString().equals("Complete!")) {
+                        new Thread(() -> {
+                            try {
+                                Thread.sleep(2000);
+                                SwingUtilities.invokeLater(() -> {
+                                    finalProgressBar.setValue(0);
+                                    finalProgressBar.setString("Ready");
+                                });
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                        }).start();
+                    }
+                });
             }
         }).start();
     }
