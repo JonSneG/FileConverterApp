@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File to PDF Converter</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-color: #1e293b;
+            --text-secondary: #64748b;
+            --border-color: #e2e8f0;
+            --success-color: #10b981;
+            --error-color: #ef4444;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        body.dark-mode {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border-color: #334155;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--bg-color) 0%, #e0e7ff 100%);
+            color: var(--text-color);
+            min-height: 100vh;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            position: relative;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        .theme-toggle {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: var(--card-bg);
+            border: 2px solid var(--border-color);
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1.2rem;
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.05);
+            box-shadow: var(--shadow);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            background: var(--card-bg);
+            padding: 10px;
+            border-radius: 15px;
+            box-shadow: var(--shadow);
+            flex-wrap: wrap;
+        }
+
+        .tab-button {
+            flex: 1;
+            min-width: 150px;
+            padding: 15px 25px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .tab-button:hover {
+            background: var(--bg-color);
+        }
+
+        .tab-button.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+            background: var(--card-bg);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .conversion-section h2 {
+            margin-bottom: 25px;
+            color: var(--text-color);
+            font-size: 1.8rem;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        select, input[type="text"], input[type="number"], input[type="range"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 1rem;
+            background: var(--bg-color);
+            color: var(--text-color);
+            transition: all 0.3s ease;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .file-drop-zone {
+            border: 3px dashed var(--border-color);
+            border-radius: 15px;
+            padding: 50px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: var(--bg-color);
+            margin-bottom: 20px;
+        }
+
+        .file-drop-zone:hover, .file-drop-zone.dragover {
+            border-color: var(--primary-color);
+            background: rgba(37, 99, 235, 0.05);
+        }
+
+        .file-drop-zone i {
+            font-size: 3rem;
+            color: var(--text-secondary);
+            margin-bottom: 15px;
+        }
+
+        .file-list {
+            list-style: none;
+            margin-top: 20px;
+        }
+
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: var(--bg-color);
+            border-radius: 10px;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .file-item:hover {
+            transform: translateX(5px);
+            box-shadow: var(--shadow);
+        }
+
+        .file-info {
+            flex: 1;
+        }
+
+        .file-name {
+            font-weight: 600;
+            color: var(--text-color);
+            margin-bottom: 5px;
+        }
+
+        .file-size {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .file-status {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .status-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .remove-file {
+            background: var(--error-color);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-left: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .remove-file:hover {
+            transform: scale(1.05);
+        }
+
+        .btn {
+            padding: 15px 35px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--text-secondary);
+            color: white;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+
+        .progress-container {
+            margin-top: 25px;
+            display: none;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: var(--bg-color);
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-color), #3b82f6);
+            width: 0%;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        .log-area {
+            margin-top: 25px;
+            background: var(--bg-color);
+            padding: 20px;
+            border-radius: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+
+        .log-entry {
+            margin-bottom: 8px;
+            padding: 5px;
+            border-left: 3px solid var(--primary-color);
+            padding-left: 10px;
+        }
+
+        .log-success {
+            border-left-color: var(--success-color);
+            color: var(--success-color);
+        }
+
+        .log-error {
+            border-left-color: var(--error-color);
+            color: var(--error-color);
+        }
+
+        .slider-value {
+            display: inline-block;
+            margin-left: 15px;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+
+            .theme-toggle {
+                position: static;
+                margin-top: 15px;
+            }
+
+            .tab-button {
+                min-width: 120px;
+                padding: 12px 15px;
+                font-size: 0.9rem;
+            }
+
+            .tab-content {
+                padding: 25px;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>📄 File Converter Pro</h1>
+        <p class="subtitle">Convert files to PDF and perform advanced PDF operations</p>
+        <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+    </header>
+
+    <div class="tabs">
+        <button class="tab-button active" onclick="switchTab('single')">Single Conversion</button>
+        <button class="tab-button" onclick="switchTab('batch')">Batch Conversion</button>
+        <button class="tab-button" onclick="switchTab('merge')">Merge PDFs</button>
+        <button class="tab-button" onclick="switchTab('split')">Split PDF</button>
+    </div>
+
+    <div id="single" class="tab-content active conversion-section">
+        <h2>Single File Conversion</h2>
+
+        <div class="form-group">
+            <label>Conversion Type:</label>
+            <select id="singleConversionType">
+                <option value="txt-pdf">TXT to PDF</option>
+                <option value="docx-pdf">DOCX to PDF</option>
+                <option value="html-pdf">HTML to PDF</option>
+                <option value="pdf-txt">PDF to TXT</option>
+            </select>
+        </div>
+
+        <div class="file-drop-zone" id="singleDropZone" onclick="document.getElementById('singleFileInput').click()">
+            <div style="font-size: 3rem; margin-bottom: 15px;">📁</div>
+            <p style="font-size: 1.2rem; font-weight: 600; margin-bottom: 10px;">Drop file here or click to browse</p>
+            <p style="color: var(--text-secondary);">Supported: TXT, DOCX, HTML, PDF</p>
+        </div>
+        <input type="file" id="singleFileInput" accept=".txt,.docx,.html,.htm,.pdf" style="display: none;">
+
+        <div id="singleFileInfo" style="display: none;">
+            <div class="file-item">
+                <div class="file-info">
+                    <div class="file-name" id="singleFileName"></div>
+                    <div class="file-size" id="singleFileSize"></div>
+                </div>
+                <span class="file-status status-pending">Ready</span>
+            </div>
+        </div>
+
+        <div class="progress-container" id="singleProgress">
+            <div class="progress-bar">
+                <div class="progress-fill" id="singleProgressFill">0%</div>
+            </div>
+        </div>
+
+        <div class="button-group">
+            <button class="btn btn-primary" onclick="convertSingleFile()" id="singleConvertBtn">
+                ⚡ Convert File
+            </button>
+            <button class="btn btn-secondary" onclick="clearSingleFile()">
+                🗑️ Clear
+            </button>
+        </div>
+
+        <div class="log-area" id="singleLog" style="display: none;"></div>
+    </div>
+
+    <div id="batch" class="tab-content conversion-section">
+        <h2>Batch File Conversion</h2>
+
+        <div class="form-group">
+            <label>Output Format:</label>
+            <select id="batchOutputFormat">
+                <option value="pdf">PDF</option>
+            </select>
+        </div>
+
+        <div class="file-drop-zone" id="batchDropZone" onclick="document.getElementById('batchFileInput').click()">
+            <div style="font-size: 3rem; margin-bottom: 15px;">📁</div>
+            <p style="font-size: 1.2rem; font-weight: 600; margin-bottom: 10px;">Drop multiple files here or click to browse</p>
+            <p style="color: var(--text-secondary);">Select multiple files to convert</p>
+        </div>
+        <input type="file" id="batchFileInput" multiple accept=".txt,.docx,.html,.htm" style="display: none;">
+
+        <ul class="file-list" id="batchFileList"></ul>
+
+        <div class="progress-container" id="batchProgress">
+            <div class="progress-bar">
+                <div class="progress-fill" id="batchProgressFill">0%</div>
+            </div>
+        </div>
+
+        <div class="button-group">
+            <button class="btn btn-primary" onclick="convertBatchFiles()" id="batchConvertBtn">
+                ⚡ Convert All Files
+            </button>
+            <button class="btn btn-secondary" onclick="clearBatchFiles()">
+                🗑️ Clear All
+            </button>
+        </div>
+
+        <div class="log-area" id="batchLog" style="display: none;"></div>
+    </div>
+
+    <div id="merge" class="tab-content conversion-section">
+        <h2>Merge PDF Files</h2>
+
+        <div class="file-drop-zone" id="mergeDropZone" onclick="document.getElementById('mergeFileInput').click()">
+            <div style="font-size: 3rem; margin-bottom: 15px;">📑</div>
+            <p style="font-size: 1.2rem; font-weight: 600; margin-bottom: 10px;">Drop PDF files here or click to browse</p>
+            <p style="color: var(--text-secondary);">Files will be merged in the order they are added</p>
+        </div>
+        <input type="file" id="mergeFileInput" multiple accept=".pdf" style="display: none;">
+
+        <ul class="file-list" id="mergeFileList"></ul>
+
+        <div class="button-group">
+            <button class="btn btn-primary" onclick="mergePdfFiles()" id="mergeBtn">
+                🔗 Merge PDFs
+            </button>
+            <button class="btn btn-secondary" onclick="clearMergeFiles()">
+                🗑️ Clear All
+            </button>
+        </div>
+
+        <div class="log-area" id="mergeLog" style="display: none;"></div>
+    </div>
+
+    <div id="split" class="tab-content conversion-section">
+        <h2>Split PDF File</h2>
+
+        <div class="file-drop-zone" id="splitDropZone" onclick="document.getElementById('splitFileInput').click()">
+            <div style="font-size: 3rem; margin-bottom: 15px;">✂️</div>
+            <p style="font-size: 1.2rem; font-weight: 600; margin-bottom: 10px;">Drop a PDF file here or click to browse</p>
+            <p style="color: var(--text-secondary);">Split PDF into individual pages or extract specific pages</p>
+        </div>
+        <input type="file" id="splitFileInput" accept=".pdf" style="display: none;">
+
+        <div id="splitFileInfo" style="display: none; margin-top: 20px;">
+            <div class="file-item">
+                <div class="file-info">
+                    <div class="file-name" id="splitFileName"></div>
+                    <div class="file-size" id="splitFileSize"></div>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 25px;">
+                <label>
+                    <input type="radio" name="splitMode" value="all" checked> Split into individual pages
+                </label>
+                <label style="margin-top: 10px;">
+                    <input type="radio" name="splitMode" value="range"> Extract page range
+                </label>
+            </div>
+
+            <div id="pageRangeInputs" style="display: none; margin-top: 15px;">
+                <div style="display: flex; gap: 15px; align-items: center;">
+                    <div class="form-group" style="flex: 1; margin: 0;">
+                        <label>From Page:</label>
+                        <input type="number" id="splitStartPage" min="1" value="1">
+                    </div>
+                    <div class="form-group" style="flex: 1; margin: 0;">
+                        <label>To Page:</label>
+                        <input type="number" id="splitEndPage" min="1" value="1">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="button-group">
+            <button class="btn btn-primary" onclick="splitPdfFile()" id="splitBtn">
+                ✂️ Split PDF
+            </button>
+            <button class="btn btn-secondary" onclick="clearSplitFile()">
+                🗑️ Clear
+            </button>
+        </div>
+
+        <div class="log-area" id="splitLog" style="display: none;"></div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+
+<script>
+    const { PDFDocument } = PDFLib;
+    const { jsPDF } = window.jspdf;
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
+    // Helper: Format File Size
+    function formatFileSize(bytes, decimalPoint) {
+        if (bytes == 0) return '0 Bytes';
+        const k = 1000,
+            dm = decimalPoint || 2,
+            sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'],
+            i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+    }
+
+    // Helper: Add Log Entry
+    function addLog(logId, message, type = 'info') {
+        const logArea = document.getElementById(logId);
+        const entry = document.createElement('div');
+        entry.className = 'log-entry';
+        if (type === 'success') entry.classList.add('log-success');
+        if (type === 'error') entry.classList.add('log-error');
+        entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+        logArea.appendChild(entry);
+        logArea.scrollTop = logArea.scrollHeight;
+    }
+
+    // Helper: Download File
+    function downloadFile(blob, filename) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    // Conversion Logic: TXT to PDF (using jsPDF)
+    async function textToPdf(text) {
+        return new Promise((resolve) => {
+            const doc = new jsPDF();
+            const textLines = doc.splitTextToSize(text, 180); // 180mm width for A4
+            let y = 10; // Start position
+
+            textLines.forEach((line) => {
+                if (y > 280) { // Check for new page (A4 height is ~297mm)
+                    doc.addPage();
+                    y = 10;
+                }
+                doc.text(line, 10, y);
+                y += 7; // Line height
+            });
+
+            const blob = doc.output('blob');
+            resolve(blob);
+        });
+    }
+
+    // Conversion Logic: Basic HTML to PDF (using jsPDF autoTable) - Note: jspdf does not render complex HTML/CSS well.
+    async function htmlToPdf(htmlContent) {
+        return new Promise((resolve) => {
+            const doc = new jsPDF();
+            // This will render the content roughly. For complex styling, a server-side solution is necessary.
+            doc.html(htmlContent, {
+                callback: (pdf) => {
+                    resolve(pdf.output('blob'));
+                },
+                x: 10,
+                y: 10,
+                html2canvas: { scale: 0.8 },
+            });
+        });
+    }
+
+    // PDF Extraction Logic: PDF to TXT (using pdf.js)
+    async function pdfToText(pdfFile) {
+        const arrayBuffer = await pdfFile.arrayBuffer();
+        const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+        const pdf = await loadingTask.promise;
+        let fullText = '';
+
+        for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const textContent = await page.getTextContent();
+            const pageText = textContent.items.map(item => item.str).join(' ');
+            fullText += pageText + '\n\n';
+        }
+
+        return new Blob([fullText], { type: 'text/plain' });
+    }
+
+
+    // Theme Toggle
+    function toggleTheme() {
+        document.body.classList.toggle('dark-mode');
+        const btn = document.querySelector('.theme-toggle');
+        btn.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+    }
+
+    // Tab Switching
+    function switchTab(tabName) {
+        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+        document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+
+        document.getElementById(tabName).classList.add('active');
+        // 'event' is globally available in modern browsers for inline handlers, but better to pass it. Using a fallback.
+        const targetButton = event.target || document.querySelector(`.tab-button[onclick*="'${tabName}'"]`);
+        if (targetButton) {
+            targetButton.classList.add('active');
+        }
+    }
+
+    // --- Single File Conversion Logic ---
+    let singleFile = null;
+
+    document.getElementById('singleFileInput').addEventListener('change', function(e) {
+        if (e.target.files.length > 0) {
+            singleFile = e.target.files[0];
+            displaySingleFile();
+        }
+    });
+
+    function displaySingleFile() {
+        document.getElementById('singleFileInfo').style.display = 'block';
+        document.getElementById('singleFileName').textContent = singleFile.name;
+        document.getElementById('singleFileSize').textContent = formatFileSize(singleFile.size);
+        document.querySelector('#singleFileInfo .file-status').textContent = 'Ready';
+        document.querySelector('#singleFileInfo .file-status').className = 'file-status status-pending';
+    }
+
+    function clearSingleFile() {
+        singleFile = null;
+        document.getElementById('singleFileInfo').style.display = 'none';
+        document.getElementById('singleFileInput').value = '';
+        document.getElementById('singleProgress').style.display = 'none';
+        document.getElementById('singleLog').innerHTML = '';
+        document.getElementById('singleLog').style.display = 'none';
+    }
+
+    async function convertSingleFile() {
+        if (!singleFile) {
+            alert('Please select a file first!');
+            return;
+        }
+
+        const conversionType = document.getElementById('singleConversionType').value;
+        const progressContainer = document.getElementById('singleProgress');
+        const progressFill = document.getElementById('singleProgressFill');
+        const logArea = document.getElementById('singleLog');
+
+        progressContainer.style.display = 'block';
+        logArea.style.display = 'block';
+        logArea.innerHTML = '';
+
+        const fileStatusEl = document.querySelector('#singleFileInfo .file-status');
+        fileStatusEl.textContent = 'Processing...';
+        fileStatusEl.className = 'file-status status-pending';
+        progressFill.style.width = '20%';
+        progressFill.textContent = '20%';
+        document.getElementById('singleConvertBtn').disabled = true;
+
+        addLog('singleLog', `Starting conversion of ${singleFile.name} (${conversionType})...`, 'info');
+
+        try {
+            let outputBlob;
+            let outputName;
+
+            if (conversionType === 'txt-pdf' && singleFile.name.toLowerCase().endsWith('.txt')) {
+                const text = await singleFile.text();
+                outputBlob = await textToPdf(text);
+                outputName = singleFile.name.replace('.txt', '.pdf');
+            } else if (conversionType === 'html-pdf' && (singleFile.name.toLowerCase().endsWith('.html') || singleFile.name.toLowerCase().endsWith('.htm'))) {
+                addLog('singleLog', 'HTML to PDF conversion - basic client-side implementation may lose complex styling.', 'info');
+                const html = await singleFile.text();
+                outputBlob = await htmlToPdf(html);
+                outputName = singleFile.name.replace(/\.html?$/i, '.pdf');
+            } else if (conversionType === 'pdf-txt' && singleFile.name.toLowerCase().endsWith('.pdf')) {
+                outputBlob = await pdfToText(singleFile);
+                outputName = singleFile.name.replace('.pdf', '.txt');
+            } else if (conversionType === 'docx-pdf') {
+                // Docx to PDF requires complex server-side library (e.g., LibreOffice, Pandoc).
+                throw new Error(`DOCX conversion requires server-side processing which is not implemented here. Please use a different conversion.`);
+            } else {
+                throw new Error(`File type does not match selected conversion type: ${conversionType}`);
+            }
+
+            progressFill.style.width = '100%';
+            progressFill.textContent = '100%';
+
+            downloadFile(outputBlob, outputName);
+            addLog('singleLog', `✓ Conversion successful! Downloaded: ${outputName}`, 'success');
+            fileStatusEl.textContent = 'Done';
+            fileStatusEl.className = 'file-status status-success';
+
+        } catch (error) {
+            addLog('singleLog', `✗ Conversion Error: ${error.message}`, 'error');
+            progressFill.style.width = '0%';
+            fileStatusEl.textContent = 'Error';
+            fileStatusEl.className = 'file-status status-error';
+        } finally {
+            document.getElementById('singleConvertBtn').disabled = false;
+            // Timeout to show 100% briefly before hiding
+            setTimeout(() => progressContainer.style.display = 'none', 1000);
+        }
+    }
+
+    // --- Batch Conversion Logic ---
+    let batchFiles = [];
+
+    document.getElementById('batchFileInput').addEventListener('change', function(e) {
+        Array.from(e.target.files).forEach(file => {
+            // Simple check for supported batch types
+            const ext = file.name.split('.').pop().toLowerCase();
+            if (ext === 'txt' || ext === 'html' || ext === 'htm') {
+                 batchFiles.push(file);
+            } else {
+                alert(`File ${file.name} is not a supported type for client-side batch conversion (TXT, HTML only).`);
+            }
+        });
+        displayBatchFiles();
+    });
+
+    function displayBatchFiles() {
+        const list = document.getElementById('batchFileList');
+        list.innerHTML = '';
+
+        batchFiles.forEach((file, index) => {
+            const li = document.createElement('li');
+            li.className = 'file-item';
+            li.setAttribute('data-index', index);
+            li.innerHTML = `
+                <div class="file-info">
+                    <div class="file-name">${file.name}</div>
+                    <div class="file-size">${formatFileSize(file.size)}</div>
+                </div>
+                <span class="file-status status-pending" id="batchStatus-${index}">Pending</span>
+                <button class="remove-file" onclick="removeBatchFile(${index})">✕</button>
+            `;
+            list.appendChild(li);
+        });
+    }
+
+    function removeBatchFile(index) {
+        batchFiles.splice(index, 1);
+        displayBatchFiles();
+    }
+
+    function clearBatchFiles() {
+        batchFiles = [];
+        document.getElementById('batchFileInput').value = '';
+        displayBatchFiles();
+        document.getElementById('batchProgress').style.display = 'none';
+        document.getElementById('batchLog').innerHTML = '';
+        document.getElementById('batchLog').style.display = 'none';
+    }
+
+    async function convertBatchFiles() {
+        if (batchFiles.length === 0) {
+            alert('Please add files first!');
+            return;
+        }
+
+        const progressContainer = document.getElementById('batchProgress');
+        const progressFill = document.getElementById('batchProgressFill');
+        const logArea = document.getElementById('batchLog');
+
+        progressContainer.style.display = 'block';
+        logArea.style.display = 'block';
+        logArea.innerHTML = '';
+        document.getElementById('batchConvertBtn').disabled = true;
+
+        for (let i = 0; i < batchFiles.length; i++) {
+            const file = batchFiles[i];
+            const statusEl = document.getElementById(`batchStatus-${i}`);
+            if (statusEl) {
+                statusEl.textContent = 'Converting...';
+                statusEl.className = 'file-status status-pending';
+            }
+
+            const progress = ((i) / batchFiles.length) * 100;
+            progressFill.style.width = progress + '%';
+            progressFill.textContent = `${Math.round(progress)}% - ${i}/${batchFiles.length} files`;
+
+            try {
+                addLog('batchLog', `[${i + 1}/${batchFiles.length}] Converting ${file.name}...`, 'info');
+
+                const ext = file.name.split('.').pop().toLowerCase();
+                let outputBlob;
+                let outputName;
+
+                if (ext === 'txt') {
+                    const text = await file.text();
+                    outputBlob = await textToPdf(text);
+                    outputName = file.name.replace('.txt', '.pdf');
+                } else if (ext === 'html' || ext === 'htm') {
+                    const html = await file.text();
+                    outputBlob = await htmlToPdf(html);
+                    outputName = file.name.replace(/\.html?$/i, '.pdf');
+                } else {
+                     // Should be caught by the input change listener, but good for safety
+                     throw new Error('Unsupported file type for batch conversion (TXT/HTML only)');
+                }
+
+                downloadFile(outputBlob, outputName);
+                addLog('batchLog', `✓ ${file.name} converted successfully.`, 'success');
+                if (statusEl) {
+                    statusEl.textContent = 'Success';
+                    statusEl.className = 'file-status status-success';
+                }
+            } catch (error) {
+                addLog('batchLog', `✗ ${file.name} failed: ${error.message}`, 'error');
+                if (statusEl) {
+                    statusEl.textContent = 'Error';
+                    statusEl.className = 'file-status status-error';
+                }
+            }
+
+            // Update final progress bar for the completed file
+            const finalProgress = ((i + 1) / batchFiles.length) * 100;
+            progressFill.style.width = finalProgress + '%';
+            progressFill.textContent = `${Math.round(finalProgress)}% - ${i + 1}/${batchFiles.length} files`;
+        }
+
+        addLog('batchLog', '=== Batch conversion complete ===', 'info');
+        document.getElementById('batchConvertBtn').disabled = false;
+    }
+
+    // --- PDF Merge Logic ---
+    let mergeFiles = [];
+
+    document.getElementById('mergeFileInput').addEventListener('change', function(e) {
+        Array.from(e.target.files).forEach(file => {
+            mergeFiles.push(file);
+        });
+        displayMergeFiles();
+    });
+
+    function displayMergeFiles() {
+        const list = document.getElementById('mergeFileList');
+        list.innerHTML = '';
+
+        mergeFiles.forEach((file, index) => {
+            const li = document.createElement('li');
+            li.className = 'file-item';
+            li.innerHTML = `
+                <div class="file-info">
+                    <div class="file-name">${index + 1}. ${file.name}</div>
+                    <div class="file-size">${formatFileSize(file.size)}</div>
+                </div>
+                <button class="remove-file" onclick="removeMergeFile(${index})">✕</button>
+            `;
+            list.appendChild(li);
+        });
+    }
+
+    function removeMergeFile(index) {
+        mergeFiles.splice(index, 1);
+        displayMergeFiles();
+    }
+
+    function clearMergeFiles() {
+        mergeFiles = [];
+        document.getElementById('mergeFileInput').value = '';
+        displayMergeFiles();
+        document.getElementById('mergeLog').innerHTML = '';
+        document.getElementById('mergeLog').style.display = 'none';
+    }
+
+    async function mergePdfFiles() {
+        if (mergeFiles.length < 2) {
+            alert('Please select at least 2 PDF files to merge!');
+            return;
+        }
+
+        const logArea = document.getElementById('mergeLog');
+        logArea.style.display = 'block';
+        logArea.innerHTML = '';
+        document.getElementById('mergeBtn').disabled = true;
+
+        try {
+            addLog('mergeLog', `Merging ${mergeFiles.length} PDF files...`, 'info');
+
+            const mergedPdf = await PDFDocument.create();
+
+            for (const file of mergeFiles) {
+                const arrayBuffer = await file.arrayBuffer();
+                const pdf = await PDFDocument.load(arrayBuffer);
+                const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+                copiedPages.forEach((page) => mergedPdf.addPage(page));
+                addLog('mergeLog', `✓ Added ${file.name}`, 'info');
+            }
+
+            const mergedPdfBytes = await mergedPdf.save();
+            const blob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
+
+            downloadFile(blob, 'merged-document.pdf');
+            addLog('mergeLog', `✓ Merge successful! Downloaded: merged-document.pdf`, 'success');
+        } catch (error) {
+            addLog('mergeLog', `✗ Merge Error: ${error.message}`, 'error');
+        } finally {
+            document.getElementById('mergeBtn').disabled = false;
+        }
+    }
+
+    // --- Split PDF Logic ---
+    let splitFile = null;
+
+    document.getElementById('splitFileInput').addEventListener('change', async function(e) {
+        if (e.target.files.length > 0) {
+            splitFile = e.target.files[0];
+            await displaySplitFile();
+        }
+    });
+
+    document.querySelectorAll('input[name="splitMode"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            const rangeInputs = document.getElementById('pageRangeInputs');
+            if (this.value === 'range') {
+                rangeInputs.style.display = 'flex';
+            } else {
+                rangeInputs.style.display = 'none';
+            }
+        });
+    });
+
+    async function getPdfPageCount(file) {
+        try {
+            const arrayBuffer = await file.arrayBuffer();
+            const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+            const pdf = await loadingTask.promise;
+            return pdf.numPages;
+        } catch (e) {
+            console.error("Error reading PDF page count:", e);
+            return 0;
+        }
+    }
+
+    async function displaySplitFile() {
+        const infoDiv = document.getElementById('splitFileInfo');
+        infoDiv.style.display = 'block';
+        document.getElementById('splitFileName').textContent = splitFile.name;
+        document.getElementById('splitFileSize').textContent = formatFileSize(splitFile.size);
+
+        const pageCount = await getPdfPageCount(splitFile);
+        document.getElementById('splitFileSize').textContent += ` - ${pageCount} pages`;
+        document.getElementById('splitEndPage').value = pageCount;
+        document.getElementById('splitEndPage').max = pageCount;
+        document.getElementById('splitStartPage').max = pageCount;
+    }
+
+    function clearSplitFile() {
+        splitFile = null;
+        document.getElementById('splitFileInfo').style.display = 'none';
+        document.getElementById('splitFileInput').value = '';
+        document.getElementById('splitLog').innerHTML = '';
+        document.getElementById('splitLog').style.display = 'none';
+    }
+
+    async function splitPdfFile() {
+        if (!splitFile) {
+            alert('Please select a PDF file first!');
+            return;
+        }
+
+        const logArea = document.getElementById('splitLog');
+        logArea.style.display = 'block';
+        logArea.innerHTML = '';
+        document.getElementById('splitBtn').disabled = true;
+
+        const splitMode = document.querySelector('input[name="splitMode"]:checked').value;
+        let startPage, endPage;
+
+        if (splitMode === 'range') {
+            startPage = parseInt(document.getElementById('splitStartPage').value);
+            endPage = parseInt(document.getElementById('splitEndPage').value);
+            if (isNaN(startPage) || isNaN(endPage) || startPage <= 0 || endPage <= 0 || startPage > endPage) {
+                addLog('splitLog', 'Invalid page range specified.', 'error');
+                document.getElementById('splitBtn').disabled = false;
+                return;
+            }
+        }
+
+        try {
+            addLog('splitLog', `Splitting ${splitFile.name} with mode: ${splitMode}...`, 'info');
+
+            const arrayBuffer = await splitFile.arrayBuffer();
+            const originalPdf = await PDFDocument.load(arrayBuffer);
+            const originalPageCount = originalPdf.getPageCount();
+
+            if (splitMode === 'all') {
+                // Split into individual pages
+                for (let i = 0; i < originalPageCount; i++) {
+                    const newPdf = await PDFDocument.create();
+                    const [copiedPage] = await newPdf.copyPages(originalPdf, [i]);
+                    newPdf.addPage(copiedPage);
+
+                    const pdfBytes = await newPdf.save();
+                    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+                    downloadFile(blob, `${splitFile.name.replace('.pdf', '')}_page_${i + 1}.pdf`);
+                    addLog('splitLog', `✓ Downloaded page ${i + 1}`, 'info');
+                }
+                addLog('splitLog', `✓ Split successful! Downloaded ${originalPageCount} files.`, 'success');
+
+            } else if (splitMode === 'range') {
+                // Extract page range
+                if (endPage > originalPageCount) {
+                    endPage = originalPageCount; // Cap at max pages
+                    addLog('splitLog', `End page capped at maximum: ${originalPageCount}`, 'info');
+                }
+
+                const pagesToExtract = [];
+                for (let i = startPage - 1; i < endPage; i++) {
+                    pagesToExtract.push(i);
+                }
+
+                const newPdf = await PDFDocument.create();
+                const copiedPages = await newPdf.copyPages(originalPdf, pagesToExtract);
+                copiedPages.forEach((page) => newPdf.addPage(page));
+
+                const pdfBytes = await newPdf.save();
+                const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+                downloadFile(blob, `${splitFile.name.replace('.pdf', '')}_pages_${startPage}-${endPage}.pdf`);
+                addLog('splitLog', `✓ Extracted and downloaded pages ${startPage} to ${endPage}.`, 'success');
+            }
+
+        } catch (error) {
+            addLog('splitLog', `✗ Split Error: ${error.message}`, 'error');
+        } finally {
+            document.getElementById('splitBtn').disabled = false;
+        }
+    }
+
+    // --- Drag and Drop Handlers (Generic) ---
+
+    function setupDragDrop(dropZoneId, fileInputId, fileListVariable, displayFunction) {
+        const dropZone = document.getElementById(dropZoneId);
+        const fileInput = document.getElementById(fileInputId);
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+        });
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.add('dragover'), false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.remove('dragover'), false);
+        });
+
+        dropZone.addEventListener('drop', handleDrop, false);
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+
+            if (fileInput.multiple) {
+                Array.from(files).forEach(file => {
+                    const ext = file.name.split('.').pop().toLowerCase();
+                     // Specific check for batch/merge/split supported types
+                    if (fileListVariable === mergeFiles && ext !== 'pdf') return;
+                    if (fileListVariable === batchFiles && !['txt', 'html', 'htm'].includes(ext)) return;
+                    if (fileListVariable === splitFile && ext !== 'pdf') {
+                        alert('Only PDF files are supported for splitting.');
+                        return;
+                    }
+
+                    if (fileListVariable) {
+                        fileListVariable.push(file);
+                    }
+                });
+                if (displayFunction) displayFunction();
+
+            } else {
+                if (files.length > 0) {
+                    if (dropZoneId === 'singleDropZone') {
+                        singleFile = files[0];
+                        displaySingleFile();
+                    } else if (dropZoneId === 'splitDropZone') {
+                        splitFile = files[0];
+                        displaySplitFile();
+                    }
+                }
+            }
+        }
+    }
+
+    // Initialize Drag and Drop
+    setupDragDrop('singleDropZone', 'singleFileInput');
+    setupDragDrop('batchDropZone', 'batchFileInput', batchFiles, displayBatchFiles);
+    setupDragDrop('mergeDropZone', 'mergeFileInput', mergeFiles, displayMergeFiles);
+    setupDragDrop('splitDropZone', 'splitFileInput');
+
+    // Initial setup for the radio button display
+    document.querySelector('input[name="splitMode"][value="range"]').addEventListener('change', function() {
+        document.getElementById('pageRangeInputs').style.display = this.checked ? 'flex' : 'none';
+    });
+    document.querySelector('input[name="splitMode"][value="all"]').addEventListener('change', function() {
+        document.getElementById('pageRangeInputs').style.display = this.checked ? 'none' : 'flex';
+    });
+</script>
+</body>
+</html>
